@@ -1,0 +1,3 @@
+plugins:
+  invite_tokens_enabled:
+    default: false

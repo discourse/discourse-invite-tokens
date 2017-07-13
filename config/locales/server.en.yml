@@ -1,0 +1,5 @@
+en:
+  site_settings:
+    invite_tokens_enabled: Enable invite tokens plugin (https://meta.discourse.org/t/generating-lots-of-invite-links/17563)
+  invite:
+    user_exists_simple: "There's no need to invite that user, they already have an account!"
