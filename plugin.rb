@@ -16,10 +16,6 @@ after_initialize do
     end
   end
 
-  add_to_class(Guardian, :can_create_disposable_invite?) do
-    user.admin?
-  end
-
   require_dependency 'invite'
   class ::Invite
 
@@ -65,7 +61,7 @@ after_initialize do
    before_filter :ensure_logged_in, except: [:redeem_disposable_invite]
 
     def create_disposable_invite
-      guardian.ensure_can_create_disposable_invite!
+      raise Discourse::InvalidAccess unless SiteSetting.invite_tokens_enabled? && guardian.is_admin?
       params.permit(:username, :email, :quantity, :group_names)
 
       username_or_email = params[:username] ? fetch_username : fetch_email
@@ -76,6 +72,7 @@ after_initialize do
     end
 
     def redeem_disposable_invite
+      return redirect_to path('/') unless SiteSetting.invite_tokens_enabled?
       params.require(:email)
       params.permit(:username, :name, :topic)
       params[:email] = params[:email].split(' ').join('+')
