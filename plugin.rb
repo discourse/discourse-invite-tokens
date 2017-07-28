@@ -40,7 +40,7 @@ after_initialize do
       invite = Invite.find_by(invite_key: token)
       if invite
         lower_email = Email.downcase(email)
-        user = User.find_by(email: lower_email)
+        user = User.find_by_email(lower_email)
         raise UserExists.new I18n.t("invite.user_exists_simple") if user.present?
 
         invite.update_column(:email, email)
