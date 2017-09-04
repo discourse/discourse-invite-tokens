@@ -55,10 +55,10 @@ after_initialize do
   class DiscourseInviteTokens::InviteTokensController < ::ApplicationController
    requires_plugin PLUGIN_NAME
 
-   skip_before_filter :check_xhr
-   skip_before_filter :preload_json
-   skip_before_filter :redirect_to_login_if_required
-   before_filter :ensure_logged_in, except: [:redeem_disposable_invite]
+   skip_before_action :check_xhr
+   skip_before_action :preload_json
+   skip_before_action :redirect_to_login_if_required
+   before_action :ensure_logged_in, except: [:redeem_disposable_invite]
 
     def create_disposable_invite
       raise Discourse::InvalidAccess unless SiteSetting.invite_tokens_enabled? && guardian.is_admin?
