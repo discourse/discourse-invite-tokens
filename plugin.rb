@@ -1,8 +1,8 @@
 # name: discourse-invite-tokens
 # about: Generate multiple invite tokens
-# version: 0.1
+# version: 0.2
 # author: Arpit Jalan
-# url: https://www.github.com/techAPJ/discourse-invite-tokens
+# url: https://www.github.com/discourse/discourse-invite-tokens
 
 enabled_site_setting :invite_tokens_enabled
 
@@ -19,7 +19,7 @@ after_initialize do
   require_dependency 'invite'
   class ::Invite
 
-    def self.generate_disposable_tokens(invited_by, quantity=nil, group_names=nil)
+    def self.generate_invite_tokens(invited_by, quantity=nil, group_names=nil)
       invite_tokens = []
       quantity ||= 1
       group_ids = get_group_ids(group_names)
@@ -53,25 +53,41 @@ after_initialize do
 
   require_dependency "application_controller"
   class DiscourseInviteTokens::InviteTokensController < ::ApplicationController
-   requires_plugin PLUGIN_NAME
+    requires_plugin PLUGIN_NAME
 
-   skip_before_action :check_xhr
-   skip_before_action :preload_json
-   skip_before_action :redirect_to_login_if_required
-   before_action :ensure_logged_in, except: [:redeem_disposable_invite]
+    skip_before_action :check_xhr
+    skip_before_action :preload_json
+    skip_before_action :redirect_to_login_if_required
+    before_action :ensure_logged_in, only: [:create_invite_token]
+    before_action :ensure_not_logged_in, only: [:show, :redeem_invite_token]
+    before_action :ensure_new_registrations_allowed, only: [:show, :redeem_invite_token]
 
-    def create_disposable_invite
-      raise Discourse::InvalidAccess unless SiteSetting.invite_tokens_enabled? && guardian.is_admin?
-      params.permit(:username, :email, :quantity, :group_names)
+    def show
+      prepend_view_path "plugins/discourse-invite-tokens/app/views/"
+      expires_now
 
-      username_or_email = params[:username] ? fetch_username : fetch_email
-      user = User.find_by_username_or_email(username_or_email)
+      return redirect_to path('/') unless SiteSetting.invite_tokens_enabled?
+      params.require(:email)
+      params.permit(:username, :name, :topic)
+      params[:email] = params[:email].split(' ').join('+')
+      invite = Invite.find_by(invite_key: params[:token])
 
-      invite_tokens = Invite.generate_disposable_tokens(user, params[:quantity], params[:group_names])
-      render_json_dump(invite_tokens)
+      if invite.present? && !invite.redeemed?
+        if (EmailValidator.email_regex =~ params[:email])
+          @email = params[:email]
+          @username = params[:username]
+          @name = params[:name]
+          @topic = params[:topic]
+        else
+          flash.now[:error] = I18n.t('invite.invalid_email_address')
+        end
+      else
+        flash.now[:error] = I18n.t('invite.not_found_template', site_name: SiteSetting.title, base_url: Discourse.base_url)
+      end
+      render layout: 'no_ember'
     end
 
-    def redeem_disposable_invite
+    def redeem_invite_token
       return redirect_to path('/') unless SiteSetting.invite_tokens_enabled?
       params.require(:email)
       params.permit(:username, :name, :topic)
@@ -99,6 +115,37 @@ after_initialize do
       end
     end
 
+    def create_invite_token
+      raise Discourse::InvalidAccess unless SiteSetting.invite_tokens_enabled? && guardian.is_admin?
+      params.permit(:username, :email, :quantity, :group_names)
+
+      username_or_email = params[:username] ? fetch_username : fetch_email
+      user = User.find_by_username_or_email(username_or_email)
+
+      invite_tokens = Invite.generate_invite_tokens(user, params[:quantity], params[:group_names])
+      render_json_dump(invite_tokens)
+    end
+
+    def ensure_new_registrations_allowed
+      prepend_view_path "plugins/discourse-invite-tokens/app/views/"
+      unless SiteSetting.allow_new_registrations
+        flash[:error] = I18n.t('login.new_registrations_disabled')
+        render layout: 'no_ember'
+        false
+      end
+    end
+
+    def ensure_not_logged_in
+      prepend_view_path "plugins/discourse-invite-tokens/app/views/"
+      if current_user
+        flash[:error] = I18n.t("login.already_logged_in", current_user: current_user.username)
+        render layout: 'no_ember'
+        false
+      end
+    end
+
+    private
+
     def fetch_username
       params.require(:username)
       params[:username]
@@ -121,8 +168,9 @@ after_initialize do
   end
 
   DiscourseInviteTokens::Engine.routes.draw do
-    post "/generate" => "invite_tokens#create_disposable_invite"
-    get "/redeem/:token" => "invite_tokens#redeem_disposable_invite"
+    post "/generate" => "invite_tokens#create_invite_token"
+    get "/redeem/:token" => "invite_tokens#show"
+    put "redeem/:token" => "invite_tokens#redeem_invite_token", as: "redeem_invite_token"
 
   end
 
