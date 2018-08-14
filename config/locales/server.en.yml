@@ -4,3 +4,4 @@ en:
   invite:
     user_exists_simple: "There's no need to invite that user, they already have an account!"
     invalid_email_address: "Invalid email address."
+    accept_invite: "Accept Invitation"
