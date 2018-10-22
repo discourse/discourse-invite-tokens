@@ -19,7 +19,7 @@ after_initialize do
   require_dependency 'invite'
   class ::Invite
 
-    def self.generate_invite_tokens(invited_by, quantity=nil, group_names=nil)
+    def self.generate_invite_tokens(invited_by, quantity = nil, group_names = nil)
       invite_tokens = []
       quantity ||= 1
       group_ids = get_group_ids(group_names)
@@ -36,7 +36,7 @@ after_initialize do
       invite_tokens
     end
 
-    def self.redeem_from_token(token, email, username=nil, name=nil, topic_id=nil)
+    def self.redeem_from_token(token, email, username = nil, name = nil, topic_id = nil)
       invite = Invite.find_by(invite_key: token)
       if invite
         lower_email = Email.downcase(email)
@@ -108,7 +108,7 @@ after_initialize do
 
           redirect_to path("/")
         rescue Invite::UserExists, ActiveRecord::RecordInvalid => e
-          render json: {errors: [e.message]}, status: 422
+          render json: { errors: [e.message] }, status: 422
         end
       else
         render json: { success: false, message: I18n.t('invite.not_found') }
