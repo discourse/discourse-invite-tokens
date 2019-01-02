@@ -1,3 +1,5 @@
 plugins:
   invite_tokens_enabled:
     default: false
+  invite_tokens_requires_email_confirmation:
+    default: true

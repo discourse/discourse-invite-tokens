@@ -98,6 +98,7 @@ after_initialize do
         begin
           user = Invite.redeem_from_token(params[:token], params[:email], params[:username], params[:name], params[:topic].to_i)
           if user.present?
+            user.update_column(:active, true) unless SiteSetting.invite_tokens_requires_email_confirmation?
             log_on_user(user)
             post_process_invite(user)
           end
