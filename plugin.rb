@@ -99,15 +99,18 @@ after_initialize do
           user = Invite.redeem_from_token(params[:token], params[:email], params[:username], params[:name], params[:topic].to_i)
           if user.present?
             user.update_column(:active, true) unless SiteSetting.invite_tokens_requires_email_confirmation?
-            log_on_user(user)
+            log_on_user(user) if user.active?
             post_process_invite(user)
           end
 
-          topic = invite.topics.first
-          topic = user.present? ? invite.topics.first : nil
-          return redirect_to path("#{topic.relative_url}") if topic.present?
-
-          redirect_to path("/")
+          if user.present? && user.active?
+            topic = invite.topics.first
+            return redirect_to path("#{topic.relative_url}") if topic.present?
+            redirect_to path("/")
+          else
+            flash.now[:info] = I18n.t('invite.confirm_email')
+            render layout: 'no_ember'
+          end
         rescue Invite::UserExists, ActiveRecord::RecordInvalid => e
           render json: { errors: [e.message] }, status: 422
         end
