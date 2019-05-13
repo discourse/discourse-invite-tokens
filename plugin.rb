@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # name: discourse-invite-tokens
 # about: Generate multiple invite tokens
 # version: 0.2
