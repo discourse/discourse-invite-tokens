@@ -27,7 +27,7 @@ after_initialize do
       group_ids = get_group_ids(group_names)
 
       quantity.to_i.times do
-        invite = Invite.create!(invited_by: invited_by)
+        invite = Invite.create!(invited_by: invited_by, emailed_status: Invite.emailed_status_types[:not_required])
         group_ids = group_ids - invite.invited_groups.pluck(:group_id)
         group_ids.each do |group_id|
           invite.invited_groups.create!(group_id: group_id)
