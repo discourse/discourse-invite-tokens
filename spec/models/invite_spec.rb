@@ -9,8 +9,8 @@ describe Invite do
 
   describe '.redeem_from_token' do
     let(:inviter) { Fabricate(:user) }
-    let(:invite) { Fabricate(:invite, invited_by: inviter, email: 'test@example.com', user_id: nil) }
-    let(:invalid_invite) { Fabricate(:invite, invited_by: inviter, email: 'existing_user@example.com', user_id: nil) }
+    let(:invite) { Fabricate(:invite, invited_by: inviter, email: 'test@example.com') }
+    let(:invalid_invite) { Fabricate(:invite, invited_by: inviter, email: 'existing_user@example.com') }
     let(:existing_user) { Fabricate(:user, email: invite.email) }
 
     it 'redeems the invite from token' do

@@ -27,10 +27,10 @@ describe DiscourseInviteTokens do
         invite.reload
 
         expect(response.status).to eq(302)
-        expect(session[:current_user_id]).to eq(invite.user_id)
+        expect(session[:current_user_id]).to eq(invite.invited_users.first.user_id)
         expect(invite.redeemed?).to be_truthy
 
-        invited_user = User.find(invite.user_id)
+        invited_user = User.find(invite.invited_users.first.user_id)
         expect(invited_user.active).to eq(true)
         expect(invited_user.email_confirmed?).to eq(false)
       end

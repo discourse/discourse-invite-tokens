@@ -45,9 +45,8 @@ after_initialize do
         user = User.find_by_email(lower_email)
         raise UserExists.new I18n.t("invite.user_exists_simple") if user.present?
 
-        invite.update_column(:email, email)
         invite.topic_invites.create!(invite_id: invite.id, topic_id: topic_id) if topic_id && Topic.find_by_id(topic_id) && !invite.topic_invites.pluck(:topic_id).include?(topic_id)
-        user = InviteRedeemer.new(invite, username, name).redeem
+        user = InviteRedeemer.new(invite: invite, email: email, username: username, name: name).redeem
       end
       user
     end
