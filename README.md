@@ -1,3 +1,5 @@
-## Discourse Invite Tokens
+# Discourse Invite Tokens Plugin
 
-https://meta.discourse.org/t/generating-lots-of-invite-links/17563
+Generate multiple invite tokens.
+
+For more information, please see: https://meta.discourse.org/t/generating-lots-of-invite-links/17563
