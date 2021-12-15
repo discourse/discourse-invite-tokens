@@ -4,7 +4,7 @@
 # about: Generate multiple invite tokens
 # version: 0.2
 # author: Arpit Jalan
-# url: https://www.github.com/discourse/discourse-invite-tokens
+# url: https://github.com/discourse/discourse-invite-tokens
 
 enabled_site_setting :invite_tokens_enabled
 
