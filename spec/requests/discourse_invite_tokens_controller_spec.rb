@@ -9,7 +9,7 @@ describe DiscourseInviteTokens do
 
   describe 'redeem_invite_token' do
     let(:user) { Fabricate(:coding_horror) }
-    let(:invite) { Fabricate(:invite, invited_by: user, emailed_status: Invite.emailed_status_types[:not_required]) }
+    let(:invite) { Fabricate(:invite, invited_by: user, emailed_status: Invite.emailed_status_types[:not_required], email: nil) }
     context 'success' do
 
       before do
@@ -19,6 +19,7 @@ describe DiscourseInviteTokens do
       it 'logs in the user' do
         events = DiscourseEvent.track_events do
           put "/invite-token/redeem/#{invite.invite_key}?email=foo@bar.com"
+          expect(response.status).to eq(302)
         end
 
         expect(events.map { |event| event[:event_name] }).to include(

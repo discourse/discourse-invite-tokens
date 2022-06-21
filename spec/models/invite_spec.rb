@@ -14,7 +14,7 @@ describe Invite do
     let(:existing_user) { Fabricate(:user, email: invite.email) }
 
     it 'redeems the invite from token' do
-      Invite.redeem_from_token(invite.invite_key, 'user@example.com')
+      Invite.redeem_from_token(invite.invite_key, 'test@example.com')
       invite.reload
       expect(invite).to be_redeemed
     end
