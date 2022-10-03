@@ -10,7 +10,7 @@ describe DiscourseInviteTokens do
   describe 'redeem_invite_token' do
     let(:user) { Fabricate(:coding_horror) }
     let(:invite) { Fabricate(:invite, invited_by: user, emailed_status: Invite.emailed_status_types[:not_required], email: nil) }
-    context 'success' do
+    describe 'success' do
 
       before do
         SiteSetting.invite_tokens_requires_email_confirmation = false
