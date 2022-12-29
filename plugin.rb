@@ -18,20 +18,21 @@ after_initialize do
     end
   end
 
-  require_dependency 'invite'
+  require_dependency "invite"
   class ::Invite
-
     def self.generate_invite_tokens(invited_by, quantity = nil, group_names = nil)
       invite_tokens = []
       quantity ||= 1
       group_ids = get_group_ids(group_names)
 
       quantity.to_i.times do
-        invite = Invite.create!(invited_by: invited_by, emailed_status: Invite.emailed_status_types[:not_required])
+        invite =
+          Invite.create!(
+            invited_by: invited_by,
+            emailed_status: Invite.emailed_status_types[:not_required],
+          )
         group_ids = group_ids - invite.invited_groups.pluck(:group_id)
-        group_ids.each do |group_id|
-          invite.invited_groups.create!(group_id: group_id)
-        end
+        group_ids.each { |group_id| invite.invited_groups.create!(group_id: group_id) }
         invite_tokens.push(invite.invite_key)
       end
 
@@ -45,8 +46,12 @@ after_initialize do
         user = User.find_by_email(lower_email)
         raise UserExists.new I18n.t("invite.user_exists_simple") if user.present?
 
-        invite.topic_invites.create!(invite_id: invite.id, topic_id: topic_id) if topic_id && Topic.find_by_id(topic_id) && !invite.topic_invites.pluck(:topic_id).include?(topic_id)
-        user = InviteRedeemer.new(invite: invite, email: email, username: username, name: name).redeem
+        if topic_id && Topic.find_by_id(topic_id) &&
+             !invite.topic_invites.pluck(:topic_id).include?(topic_id)
+          invite.topic_invites.create!(invite_id: invite.id, topic_id: topic_id)
+        end
+        user =
+          InviteRedeemer.new(invite: invite, email: email, username: username, name: name).redeem
       end
       user
     end
@@ -60,17 +65,17 @@ after_initialize do
     skip_before_action :preload_json
     skip_before_action :redirect_to_login_if_required
     before_action :ensure_logged_in, only: [:create_invite_token]
-    before_action :ensure_not_logged_in, only: [:show, :redeem_invite_token]
-    before_action :ensure_new_registrations_allowed, only: [:show, :redeem_invite_token]
+    before_action :ensure_not_logged_in, only: %i[show redeem_invite_token]
+    before_action :ensure_new_registrations_allowed, only: %i[show redeem_invite_token]
 
     def show
       prepend_view_path "plugins/discourse-invite-tokens/app/views/"
       expires_now
 
-      return redirect_to path('/') unless SiteSetting.invite_tokens_enabled?
+      return redirect_to path("/") unless SiteSetting.invite_tokens_enabled?
       params.require(:email)
       params.permit(:username, :name, :topic)
-      params[:email] = params[:email].split(' ').join('+')
+      params[:email] = params[:email].split(" ").join("+")
       invite = Invite.find_by(invite_key: params[:token])
 
       if invite.present? && !invite.redeemed?
@@ -80,26 +85,39 @@ after_initialize do
           @name = params[:name]
           @topic = params[:topic]
         else
-          flash.now[:error] = I18n.t('invite.invalid_email_address')
+          flash.now[:error] = I18n.t("invite.invalid_email_address")
         end
       else
-        flash.now[:error] = I18n.t('invite.not_found_template', site_name: SiteSetting.title, base_url: Discourse.base_url)
+        flash.now[:error] = I18n.t(
+          "invite.not_found_template",
+          site_name: SiteSetting.title,
+          base_url: Discourse.base_url,
+        )
       end
-      render layout: 'no_ember'
+      render layout: "no_ember"
     end
 
     def redeem_invite_token
-      return redirect_to path('/') unless SiteSetting.invite_tokens_enabled?
+      return redirect_to path("/") unless SiteSetting.invite_tokens_enabled?
       params.require(:email)
       params.permit(:username, :name, :topic)
-      params[:email] = params[:email].split(' ').join('+')
+      params[:email] = params[:email].split(" ").join("+")
       invite = Invite.find_by(invite_key: params[:token])
 
       if invite.present?
         begin
-          user = Invite.redeem_from_token(params[:token], params[:email], params[:username], params[:name], params[:topic].to_i)
+          user =
+            Invite.redeem_from_token(
+              params[:token],
+              params[:email],
+              params[:username],
+              params[:name],
+              params[:topic].to_i,
+            )
           if user.present?
-            user.update_column(:active, true) unless SiteSetting.invite_tokens_requires_email_confirmation?
+            unless SiteSetting.invite_tokens_requires_email_confirmation?
+              user.update_column(:active, true)
+            end
             log_on_user(user) if user.active?
             post_process_invite(user)
           end
@@ -109,14 +127,14 @@ after_initialize do
             return redirect_to path("#{topic.relative_url}") if topic.present?
             redirect_to path("/")
           else
-            flash.now[:info] = I18n.t('invite.confirm_email')
-            render layout: 'no_ember'
+            flash.now[:info] = I18n.t("invite.confirm_email")
+            render layout: "no_ember"
           end
         rescue Invite::UserExists, ActiveRecord::RecordInvalid => e
           render json: { errors: [e.message] }, status: 422
         end
       else
-        render json: { success: false, message: I18n.t('invite.not_found') }
+        render json: { success: false, message: I18n.t("invite.not_found") }
       end
     end
 
@@ -134,8 +152,8 @@ after_initialize do
     def ensure_new_registrations_allowed
       prepend_view_path "plugins/discourse-invite-tokens/app/views/"
       unless SiteSetting.allow_new_registrations
-        flash[:error] = I18n.t('login.new_registrations_disabled')
-        render layout: 'no_ember'
+        flash[:error] = I18n.t("login.new_registrations_disabled")
+        render layout: "no_ember"
         false
       end
     end
@@ -144,7 +162,7 @@ after_initialize do
       prepend_view_path "plugins/discourse-invite-tokens/app/views/"
       if current_user
         flash[:error] = I18n.t("login.already_logged_in", current_user: current_user.username)
-        render layout: 'no_ember'
+        render layout: "no_ember"
         false
       end
     end
@@ -162,10 +180,15 @@ after_initialize do
     end
 
     def post_process_invite(user)
-      user.enqueue_welcome_message('welcome_invite') if user.send_welcome_message
+      user.enqueue_welcome_message("welcome_invite") if user.send_welcome_message
       if user.has_password?
         email_token = user.email_tokens.create(email: user.email)
-        Jobs.enqueue(:critical_user_email, type: :signup, user_id: user.id, email_token: email_token.token)
+        Jobs.enqueue(
+          :critical_user_email,
+          type: :signup,
+          user_id: user.id,
+          email_token: email_token.token,
+        )
       elsif !SiteSetting.enable_discourse_connect && SiteSetting.enable_local_logins
         Jobs.enqueue(:invite_password_instructions_email, username: user.username)
       end
@@ -175,11 +198,10 @@ after_initialize do
   DiscourseInviteTokens::Engine.routes.draw do
     post "/generate" => "invite_tokens#create_invite_token"
     get "/redeem/:token" => "invite_tokens#show"
-    put "redeem/:token" => "invite_tokens#redeem_invite_token", as: "redeem_invite_token"
-
+    put "redeem/:token" => "invite_tokens#redeem_invite_token", :as => "redeem_invite_token"
   end
 
   Discourse::Application.routes.append do
-    mount ::DiscourseInviteTokens::Engine, at: '/invite-token'
+    mount ::DiscourseInviteTokens::Engine, at: "/invite-token"
   end
 end
