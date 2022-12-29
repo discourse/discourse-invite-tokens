@@ -1,29 +1,33 @@
 # frozen_string_literal: true
 
-require 'rails_helper'
+require "rails_helper"
 
 describe DiscourseInviteTokens do
-  before do
-    SiteSetting.invite_tokens_enabled = true
-  end
+  before { SiteSetting.invite_tokens_enabled = true }
 
-  describe 'redeem_invite_token' do
+  describe "redeem_invite_token" do
     let(:user) { Fabricate(:coding_horror) }
-    let(:invite) { Fabricate(:invite, invited_by: user, emailed_status: Invite.emailed_status_types[:not_required], email: nil) }
-    describe 'success' do
+    let(:invite) do
+      Fabricate(
+        :invite,
+        invited_by: user,
+        emailed_status: Invite.emailed_status_types[:not_required],
+        email: nil,
+      )
+    end
+    describe "success" do
+      before { SiteSetting.invite_tokens_requires_email_confirmation = false }
 
-      before do
-        SiteSetting.invite_tokens_requires_email_confirmation = false
-      end
-
-      it 'logs in the user' do
-        events = DiscourseEvent.track_events do
-          put "/invite-token/redeem/#{invite.invite_key}?email=foo@bar.com"
-          expect(response.status).to eq(302)
-        end
+      it "logs in the user" do
+        events =
+          DiscourseEvent.track_events do
+            put "/invite-token/redeem/#{invite.invite_key}?email=foo@bar.com"
+            expect(response.status).to eq(302)
+          end
 
         expect(events.map { |event| event[:event_name] }).to include(
-          :user_logged_in, :user_first_logged_in
+          :user_logged_in,
+          :user_first_logged_in,
         )
         invite.reload
 
