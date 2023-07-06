@@ -8,10 +8,10 @@
 
 enabled_site_setting :invite_tokens_enabled
 
-PLUGIN_NAME = "discourse_invite_tokens".freeze
-
 after_initialize do
   module ::DiscourseInviteTokens
+    PLUGIN_NAME = "discourse-invite-tokens"
+
     class Engine < ::Rails::Engine
       engine_name PLUGIN_NAME
       isolate_namespace DiscourseInviteTokens
@@ -59,7 +59,7 @@ after_initialize do
 
   require_dependency "application_controller"
   class DiscourseInviteTokens::InviteTokensController < ::ApplicationController
-    requires_plugin PLUGIN_NAME
+    requires_plugin DiscourseInviteTokens::PLUGIN_NAME
 
     skip_before_action :check_xhr
     skip_before_action :preload_json
