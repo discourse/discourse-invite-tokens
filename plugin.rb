@@ -79,7 +79,7 @@ after_initialize do
       invite = Invite.find_by(invite_key: params[:token])
 
       if invite.present? && !invite.redeemed?
-        if (EmailValidator.email_regex =~ params[:email])
+        if (EmailAddressValidator.email_regex =~ params[:email])
           @email = params[:email]
           @username = params[:username]
           @name = params[:name]
