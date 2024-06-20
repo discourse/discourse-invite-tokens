@@ -9,6 +9,9 @@
 enabled_site_setting :invite_tokens_enabled
 
 after_initialize do
+  require_relative "app/services/problem_check/deprecated_invite_tokens"
+  register_problem_check ProblemCheck::DeprecatedInviteTokens
+
   module ::DiscourseInviteTokens
     PLUGIN_NAME = "discourse-invite-tokens"
 
